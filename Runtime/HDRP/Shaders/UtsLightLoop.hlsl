@@ -157,7 +157,6 @@ uniform float _Tweak_transparency;
 //DoubleShadeWithFeather
 #endif
 
-
 sampler2D _MainTex; uniform float4 _MainTex_ST;
 uniform float _GI_Intensity;
 #if defined(_SHADINGGRADEMAP)
@@ -279,6 +278,31 @@ int GetUtsMainLightIndex(BuiltinData builtinData)
 
     return mainLightIndex;
 }
+
+
+void PostEvaluateBSDF_UTS(LightLoopContext lightLoopContext,
+    float3 V, PositionInputs posInput,
+    PreLightData preLightData, BSDFData bsdfData, BuiltinData builtinData, AggregateLighting lighting,
+    out float3 diffuseLighting, out float3 specularLighting)
+{
+    //    AmbientOcclusionFactor aoFactor;
+    //    GetScreenSpaceAmbientOcclusionMultibounce(posInput.positionSS, preLightData.NdotV, bsdfData.perceptualRoughness, bsdfData.ambientOcclusion, bsdfData.specularOcclusion, bsdfData.diffuseColor, bsdfData.fresnel0, aoFactor);
+    //    ApplyAmbientOcclusionFactor(aoFactor, builtinData, lighting);
+
+        // Subsurface scattering mode
+    //float3 modifiedDiffuseColor = GetModifiedDiffuseColorForSSS(bsdfData);
+    float3 modifiedDiffuseColor = float3(1.0f, 1.0f, 1.0f);
+    // Apply the albedo to the direct diffuse lighting (only once). The indirect (baked)
+    // diffuse lighting has already multiply the albedo in ModifyBakedDiffuseLighting().
+    diffuseLighting = modifiedDiffuseColor * lighting.direct.diffuse + builtinData.bakeDiffuseLighting + builtinData.emissiveColor;
+    specularLighting = lighting.direct.specular + lighting.indirect.specularReflected;
+
+    //#ifdef DEBUG_DISPLAY
+    //    PostEvaluateBSDFDebugDisplay(aoFactor, builtinData, lighting, bsdfData.diffuseColor, diffuseLighting, specularLighting);
+    //#endif
+}
+
+
 #if defined(_SHADINGGRADEMAP)
 # include "ShadingGrademapOtherLight.hlsl"
 #else //#if defined(_SHADINGGRADEMAP)

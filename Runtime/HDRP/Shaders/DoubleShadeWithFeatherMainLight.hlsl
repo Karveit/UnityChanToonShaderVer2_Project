@@ -56,11 +56,28 @@ float3 UTS_MainLight(LightLoopContext lightLoopContext, FragInputs input, int ma
 #endif
 
     float shadowAttenuation = lightLoopContext.shadowValue;
+    AggregateLighting aggregateLighting;
+    ZERO_INITIALIZE(AggregateLighting, aggregateLighting); // LightLoop is in charge of initializing the struct
+    DirectLighting lighting = (DirectLighting)0;
+    if (IsMatchingLightLayer(_DirectionalLightDatas[mainLightIndex].lightLayers, builtinData.renderingLayers))
+    {
 
-
+        lighting = EvaluateBSDF_Directional(lightLoopContext, V, posInput, preLightData, _DirectionalLightDatas[mainLightIndex], bsdfData, builtinData);
+        AccumulateDirectLighting(lighting, aggregateLighting);
+    }
     float3 mainLihgtDirection = -_DirectionalLightDatas[mainLightIndex].forward;
-    float3 mainLightColor = _DirectionalLightDatas[mainLightIndex].color; // *GetCurrentExposureMultiplier();
-//    float4 tmpColor = EvaluateLight_Directional(context, posInput, _DirectionalLightDatas[mainLightIndex]);
+#if 0
+    float3 diffuseLighting;
+    float3 specularLighting;
+    PostEvaluateBSDF_UTS(lightLoopContext, V, posInput, preLightData, bsdfData, builtinData, aggregateLighting,
+         diffuseLighting, specularLighting);
+    float3 mainLightColor = diffuseLighting;
+#else
+    float3 mainLightColor = _DirectionalLightDatas[mainLightIndex].color * _DirectionalLightDatas[mainLightIndex].diffuseDimmer;
+    
+//    float3 mainLightColor = lighting.diffuse * _DirectionalLightDatas[mainLightIndex].diffuseDimmer; // +lighting.specular; // bsdfData.diffuseColor; // _DirectionalLightDatas[mainLightIndex].color; // *GetCurrentExposureMultiplier();
+#endif
+                                                                           //    float4 tmpColor = EvaluateLight_Directional(context, posInput, _DirectionalLightDatas[mainLightIndex]);
 //    float3 mainLightColor = tmpColor.xyz;
     float3 defaultLightDirection = normalize(UNITY_MATRIX_V[2].xyz + UNITY_MATRIX_V[1].xyz);
     float3 defaultLightColor = saturate(max(float3(0.05, 0.05, 0.05) * _Unlit_Intensity, max(ShadeSH9(float4(0.0, 0.0, 0.0, 1.0)), ShadeSH9(float4(0.0, -1.0, 0.0, 1.0)).rgb) * _Unlit_Intensity));
